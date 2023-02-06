@@ -7,5 +7,4 @@
 
 # Error traces
 ```
-{"timestamp":"2023-01-10T18:33:58Z","event":{"type":"DOWNLOAD_RESOURCE","testId":[],"threadId":78,"stackTrace":"com.applitools.connectivity.UfgConnector$8.onComplete()","data":{"url":"***/files/logo.svg","statusCode":401}},"level":"Error"}
-```
+Exception in thread "main" java.lang.NullPointerException: Cannot invoke "org.openqa.selenium.WebDriver$TargetLocator.defaultContent()" because the return value of "com.applitools.eyes.selenium.wrappers.EyesSeleniumDriver.switchTo()" is null```
