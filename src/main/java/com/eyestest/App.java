@@ -1,56 +1,77 @@
 package com.eyestest;
 
-import java.util.function.BiConsumer;
-
-import com.applitools.connectivity.ServerConnector;
-import com.applitools.eyes.RectangleSize;
-import com.applitools.eyes.selenium.ClassicRunner0;
-import com.applitools.eyes.selenium.SeleniumEyes;
-import com.applitools.eyes.selenium.wrappers.EyesSeleniumDriver;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
-
-import com.applitools.eyes.StdoutLogHandler;
 import com.applitools.eyes.TestResultContainer;
 import com.applitools.eyes.TestResults;
 import com.applitools.eyes.TestResultsSummary;
-import com.applitools.eyes.visualgrid.services.VisualGridRunner;
+import com.applitools.eyes.selenium.ClassicRunner;
+import com.applitools.eyes.selenium.Eyes;
+import com.applitools.eyes.selenium.fluent.Target;
+import org.openqa.selenium.MutableCapabilities;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.remote.RemoteWebDriver;
 
-import io.github.bonigarcia.wdm.WebDriverManager;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.BiConsumer;
 
 public class App {
-    private static VisualGridRunner runner = new VisualGridRunner(2);
+    private static ClassicRunner runner = new ClassicRunner();
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws MalformedURLException
+    {
         configure((eyes, wd) ->
         {
-            wd.get(System.getenv("SITE_URL"));
-            eyes.checkWindow();
+            eyes.check(Target.window());
         });
         afterTestSuite();
         System.exit(0);
     }
 
-    private static void configure(BiConsumer<SeleniumEyes, WebDriver> configured) {
-        WebDriverManager.chromedriver().setup();
-        ChromeDriver driver = null;
-        SeleniumEyes eyes = null;
+    private static void configure(BiConsumer<Eyes, WebDriver> configured) throws MalformedURLException
+    {
+        RemoteWebDriver driver = null;
+        Eyes eyes = null;
+
+        MutableCapabilities capabilities = new MutableCapabilities();
+
+        capabilities.setCapability("acceptInsecureCerts", "true");
+        capabilities.setCapability("appium:automationName", "XCUITest");
+        capabilities.setCapability("platformName", "iOS");
+        capabilities.setCapability("appium:platformVersion", "16.0");
+        capabilities.setCapability("appium:deviceName", "iPhone Simulator");
+        capabilities.setCapability("appium:screenshotWaitTimeout", "20");
+        capabilities.setCapability("appium:waitForAppScript", "$.delay(5000); $.acceptAlert();");
+        capabilities.setCapability("appium:app", "https://github.com/vividus-framework/vividus-test-app/releases/download/0.2.0/vividus-test-app-ios-0.2.0.zip");
+
+        Map<String, Object> sauceOptions = new HashMap<>();
+        sauceOptions.put("name", "VisualTestingSteps");
+        sauceOptions.put("username", System.getenv("SAUCE_USERNAME"));
+        sauceOptions.put("accessKey", System.getenv("SAUCE_ACCESS_KEY"));
+        sauceOptions.put("appiumVersion", "2.0.0");
+
+        capabilities.setCapability("sauce:options", sauceOptions);
+
+        driver = new RemoteWebDriver(new URL("https://ondemand.us-west-1.saucelabs.com/wd/hub"), capabilities);
         try {
-            eyes = new SeleniumEyes(new DefaultConfigurationProvider(), new ClassicRunner0());
-            eyes.setServerConnector(new ServerConnector());
+
+            eyes = new Eyes(runner);
+
+            eyes.setConfiguration(new DefaultConfigurationProvider().get());
             eyes.setApiKey(System.getenv("API_KEY"));
             eyes.setServerUrl(System.getenv("SERVER_URL"));
-            eyes.setLogHandler(new StdoutLogHandler(true));
 
-            driver = new ChromeDriver();
-            EyesSeleniumDriver eyesSeleniumDriver = new EyesSeleniumDriver(eyes.getLogger(), eyes, driver);
+            eyes.open(driver, "selenium-eyes5-region-check", "selenium-eyes5-region-check-execution");
 
-            eyes.open(eyesSeleniumDriver, "selenium-eyes5-session-open-issue", "eyes5-session-open-issue-execution",
-                    new RectangleSize(1600, 1200));
             configured.accept(eyes, driver);
         }
         finally {
-            eyes.closeAsync();
+            try {
+                eyes.closeAsync();
+            } catch (Exception e) {
+                eyes.abortAsync();
+            }
             driver.quit();
         }
     }

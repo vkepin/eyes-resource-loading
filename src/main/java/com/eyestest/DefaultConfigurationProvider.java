@@ -7,7 +7,6 @@ import com.applitools.eyes.config.Configuration;
 import com.applitools.eyes.config.ConfigurationProvider;
 import com.applitools.eyes.config.ContentInset;
 import com.applitools.eyes.selenium.StitchMode;
-import com.applitools.eyes.visualgrid.model.NullDebugResourceWriter;
 
 import java.util.ArrayList;
 
@@ -40,7 +39,6 @@ public class DefaultConfigurationProvider implements ConfigurationProvider {
         configuration.setUseCookies(true);
         configuration.setCaptureStatusBar(false);
         configuration.setContentInset(new ContentInset());
-        configuration.setDebugResourceWriter(new NullDebugResourceWriter());
         configuration.setRenderingConfig(false);
         configuration.setBrowsersInfo(new ArrayList<>());
         configuration.setLayoutBreakpoints(false);
